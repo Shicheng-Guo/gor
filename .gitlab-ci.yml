@@ -1,34 +1,40 @@
-variables:
-  GIT_SUBMODULE_STRATEGY: none
-  GRADLE_USER_HOME: "$CI_PROJECT_DIR/.gradle"
-  GRADLE_OPTS: "-Dorg.gradle.daemon=false"
-
-cache:
-  key: "$CI_COMMIT_REF_NAME"
-  policy: pull
-  paths:
-    - "*/build/classes"
-    - "*/*/build/classes"
-    - "*/*/*/build/classes"
-    - ".gradle/wrapper"
-    - ".gradle/cache"
-
-stages:
-  - "build and test"
-  - checks
-
 include:
+  - project: wuxi-nextcode/sdev/gitlab-ci-scripts
+  file: /auto-ci-workflow.yml
   - template: Jobs/Code-Quality.gitlab-ci.yml
   - template: Security/License-Management.gitlab-ci.yml
   - template: Security/Dependency-Scanning.gitlab-ci.yml
 
-buildtest:
-  stage: "build and test"
+variables:
+  RELEASABLE_BRANCH: master
+  #AUTO_DEPLOY_BRANCH: master
+  #AUTO_DEPLOY_ENV_REPO: wuxi-nextcode/kube-env/dev/platform-dev-kube-env
+  #DOWNSTREAM_KUBE_SUBCHART: sequence-miner
+  #DOCKER_HUB_REPO: nextcode/smclient
+  #RELEASE_ENV_REPO: wuxi-nextcode/kube-env/customer-kube-env
+  GIT_SUBMODULE_STRATEGY: none
+  GRADLE_USER_HOME: "$CI_PROJECT_DIR/.gradle"
+  GRADLE_OPTS: "-Dorg.gradle.daemon=false"
+  AUTO_DEVOPS_BUILD_IMAGE_EXTRA_ARGS: "--build-arg ORG_GRADLE_PROJECT_artifactory_password --build-arg ORG_GRADLE_PROJECT_artifactory_user"
+  DOCKER_BUILDKIT: 1
 
-  image: nextcode/builderimg-java:latest
+stages:
+  #- pre_build
+  - build
+  - test
+  - checks
+  #- promote
+  #- release
+  #- deploy
 
+
+build:
+  stage: build
+  #extends: .on-branches
+  image: nextcode/builderimg-java:jdk8
   tags:
     - iceland
+    #- gitlab-org
 
   variables:
     GIT_SUBMODULE_STRATEGY: recursive
@@ -36,6 +42,31 @@ buildtest:
 
   before_script:
     - ./gradlew -v
+    - export GRADLE_USER_HOME=`pwd`/.gradle
+
+  script: ./gradlew assemble
+
+  cache:
+    key: "$CI_COMMIT_REF_NAME"
+    policy: pull-push
+    paths:
+      - "*/build/classes"
+      - "*/*/build/classes"
+      - "*/*/*/build/classes"
+      - ".gradle/wrapper"
+      - ".gradle/cache"
+
+test:
+  stage: test
+  #extends: .on-branches
+  image: nextcode/builderimg-java:jdk8
+  tags:
+    - iceland
+    #- gitlab-org
+
+  before_script:
+    - ./gradlew -v
+    - export GRADLE_USER_HOME=`pwd`/.gradle   
 
   script: ./gradlew test slowTest integrationTest
 
@@ -55,10 +86,13 @@ buildtest:
         - "*/*/*/*/TEST-*.xml"
         - "*/*/*/*/*/TEST-*.xml"
 
+
 # This codequality block is needed to work around https://gitlab.com/gitlab-org/gitlab/issues/12274
 code_quality:
   stage: checks
-  
+  tags:
+  - iceland
+
   variables:
     GIT_SUBMODULE_STRATEGY: none
 
@@ -71,6 +105,8 @@ code_quality:
 
 license_management:
   stage: checks
+  tags:
+    - iceland
 
   variables:
     # There is no need to run tests or generate sphinx documentation for license management 
@@ -81,6 +117,9 @@ license_management:
 
 dependency_scanning:
   stage: checks
-
+    tags:
+    - iceland
+  #before_script:
+  #  - sh .gitlab/scripts/write_gradle_props.sh
   artifacts:
     paths: [gl-dependency-scanning-report.json]
