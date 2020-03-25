@@ -5,6 +5,12 @@ include:
   - template: Security/License-Management.gitlab-ci.yml
   - template: Security/Dependency-Scanning.gitlab-ci.yml
 
+image: nextcode/builderimg-java:jdk8
+
+tags:
+- iceland
+ #- gitlab-org
+
 variables:
   #RELEASABLE_BRANCH: master
   #AUTO_DEPLOY_BRANCH: master
@@ -14,12 +20,17 @@ variables:
   #RELEASE_ENV_REPO: wuxi-nextcode/kube-env/customer-kube-env
   GIT_SUBMODULE_STRATEGY: recursive
   GRADLE_USER_HOME: "$CI_PROJECT_DIR/.gradle"
-  GRADLE_OPTS: "-Dorg.gradle.daemon=false"
+  #GRADLE_OPTS: "-Dorg.gradle.daemon=false"
+  GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dskip.documentation=true"    
   #AUTO_DEVOPS_BUILD_IMAGE_EXTRA_ARGS: "--build-arg ORG_GRADLE_PROJECT_artifactory_password --build-arg ORG_GRADLE_PROJECT_artifactory_user"
   AUTO_DEVOPS_BUILD_IMAGE_EXTRA_ARGS: --build-arg ORG_GRADLE_PROJECT_artifactory_password=$ORG_GRADLE_PROJECT_artifactory_password --build-arg ORG_GRADLE_PROJECT_artifactory_user=$ORG_GRADLE_PROJECT_artifactory_user
-  
-
   DOCKER_BUILDKIT: 1
+
+
+before_script:
+  - ./gradlew -v
+  - export GRADLE_USER_HOME=`pwd`/.gradle
+
 
 stages:
   #- pre_build
@@ -34,45 +45,25 @@ stages:
 build:
   stage: build
   #extends: .on-branches
-  image: nextcode/builderimg-java:jdk8
-  tags:
-    - iceland
-    #- gitlab-org
 
   variables:
-    GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dskip.documentation=true"
-
-  before_script:
-    - ./gradlew -v
-    - export GRADLE_USER_HOME=`pwd`/.gradle
+    GIT_SUBMODULE_STRATEGY: none
 
   script: ./gradlew --build-cache assemble
 
   cache:
     key: "$CI_COMMIT_REF_NAME"
-    policy: push #pull-push
+    policy: pull-push
     paths:
       - "build"
       - "**/build"
       - ".gradle"
 
-test:
+unittest:
   stage: test
   #extends: .on-branches
-  image: nextcode/builderimg-java:jdk8
-  tags:
-    - iceland
-    #- gitlab-org
     
-  variables:
-    GIT_SUBMODULE_STRATEGY: recursive
-    GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dskip.documentation=true"    
-
-  before_script:
-    - ./gradlew -v
-    - export GRADLE_USER_HOME=`pwd`/.gradle   
-
-  script: ./gradlew test slowTest integrationTest
+  script: ./gradlew test
 
   cache:
     key: "$CI_COMMIT_REF_NAME"
@@ -88,7 +79,47 @@ test:
         - "*/*/*/*/TEST-*.xml"
         - "*/*/*/*/*/TEST-*.xml"
 
+slowtest:
+  stage: test
+  #extends: .on-branches
+    
+  script: ./gradlew slowTest
 
+  cache:
+    key: "$CI_COMMIT_REF_NAME"
+    policy: pull #pull-push
+    paths:
+      - "build"
+      - "**/build"
+      - ".gradle"
+
+  artifacts:
+    reports:
+      junit:
+        - "*/*/*/*/TEST-*.xml"
+        - "*/*/*/*/*/TEST-*.xml"
+        
+integrationtest:
+  stage: test
+  #extends: .on-branches
+    
+  script: ./gradlew integrationTest
+
+  cache:
+    key: "$CI_COMMIT_REF_NAME"
+    policy: pull #pull-push
+    paths:
+      - "build"
+      - "**/build"
+      - ".gradle"
+
+  artifacts:
+    reports:
+      junit:
+        - "*/*/*/*/TEST-*.xml"
+        - "*/*/*/*/*/TEST-*.xml"
+        
+        
 # This codequality block is needed to work around https://gitlab.com/gitlab-org/gitlab/issues/12274
 code_quality:
   stage: test
