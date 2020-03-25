@@ -32,6 +32,7 @@ stages:
   - build
   - test
   - checks
+  - publish
   #- promote
   #- release
   #- deploy
@@ -162,3 +163,16 @@ dependency_scanning:
   #  - sh .gitlab/scripts/write_gradle_props.sh
   artifacts:
     paths: [gl-dependency-scanning-report.json]
+    
+publish:
+  stage: publish
+  tags:
+    - iceland
+  script: ./gradlew publish -x test -x slowTest -x integrationTest  
+  cache:
+    key: "$CI_COMMIT_REF_NAME"
+    policy: pull
+    paths:
+      - "build"
+      - "**/build"
+      - ".gradle"
