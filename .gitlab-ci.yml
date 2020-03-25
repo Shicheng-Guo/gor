@@ -24,7 +24,6 @@ variables:
 
 
 before_script:
-  - ./gradlew -v
   - export GRADLE_USER_HOME=`pwd`/.gradle
 
 
@@ -44,7 +43,8 @@ build:
   tags:
     - iceland
  #- gitlab-org
-
+  before_script:
+    - ./gradlew -v
   script: ./gradlew --build-cache assemble
 
   cache:
