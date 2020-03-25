@@ -91,7 +91,7 @@ test:
 
 # This codequality block is needed to work around https://gitlab.com/gitlab-org/gitlab/issues/12274
 code_quality:
-  stage: checks
+  stage: test
   tags:
   - iceland
 
@@ -106,7 +106,7 @@ code_quality:
     expire_in: 1 week
 
 license_management:
-  stage: checks
+  stage: test
   tags:
     - iceland
 
@@ -118,7 +118,7 @@ license_management:
     GIT_SUBMODULE_STRATEGY: none
 
 dependency_scanning:
-  stage: checks
+  stage: test
   tags:
     - iceland
   #before_script:
