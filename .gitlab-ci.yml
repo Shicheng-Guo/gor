@@ -1,6 +1,6 @@
 include:
-  - project: wuxi-nextcode/sdev/gitlab-ci-scripts
-    file: /auto-ci-workflow.yml
+  #- project: wuxi-nextcode/sdev/gitlab-ci-scripts
+  #  file: /auto-ci-workflow.yml
   - template: Jobs/Code-Quality.gitlab-ci.yml
   - template: Security/License-Management.gitlab-ci.yml
   - template: Security/Dependency-Scanning.gitlab-ci.yml
