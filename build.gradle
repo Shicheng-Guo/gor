@@ -102,8 +102,12 @@ configure(allLeafProjects()) {
         mavenLocal()
         jcenter()
         mavenCentral()
+        maven {
+            name "gitlab-maven"
+            url "https://gitlab.com/api/v4/projects/17033400/packages/maven"
+        }
     }
-
+    
     jar {
         manifest manifestTemplate
         baseName = getProjectFullName()
