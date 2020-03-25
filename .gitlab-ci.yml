@@ -14,7 +14,7 @@ variables:
   #DOWNSTREAM_KUBE_SUBCHART: sequence-miner
   #DOCKER_HUB_REPO: nextcode/smclient
   #RELEASE_ENV_REPO: wuxi-nextcode/kube-env/customer-kube-env
-  GIT_SUBMODULE_STRATEGY: recursive
+  GIT_SUBMODULE_STRATEGY: none
   GRADLE_USER_HOME: "$CI_PROJECT_DIR/.gradle"
   #GRADLE_OPTS: "-Dorg.gradle.daemon=false"
   GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dskip.documentation=true"    
@@ -45,9 +45,6 @@ build:
     - iceland
  #- gitlab-org
 
-  variables:
-    GIT_SUBMODULE_STRATEGY: none
-
   script: ./gradlew --build-cache assemble
 
   cache:
@@ -64,7 +61,8 @@ unittest:
   tags:
     - iceland
  #- gitlab-org
-    
+  variables:
+    GIT_SUBMODULE_STRATEGY: recursive 
   script: ./gradlew test
 
   cache:
@@ -86,7 +84,8 @@ slowtest:
   #extends: .on-branches
   tags:
     - iceland  
-    
+  variables:
+    GIT_SUBMODULE_STRATEGY: recursive    
   script: ./gradlew slowTest
 
   cache:
@@ -108,6 +107,8 @@ integrationtest:
   #extends: .on-branches
   tags:
     - iceland    
+  variables:
+    GIT_SUBMODULE_STRATEGY: recursive
   script: ./gradlew integrationTest
 
   cache:
