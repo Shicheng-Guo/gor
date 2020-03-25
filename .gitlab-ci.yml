@@ -40,24 +40,21 @@ build:
     #- gitlab-org
 
   variables:
-    GIT_SUBMODULE_STRATEGY: recursive
     GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dskip.documentation=true"
 
   before_script:
     - ./gradlew -v
     - export GRADLE_USER_HOME=`pwd`/.gradle
 
-  script: ./gradlew assemble
+  script: ./gradlew --build-cache assemble
 
   cache:
     key: "$CI_COMMIT_REF_NAME"
-    policy: pull-push
+    policy: push #pull-push
     paths:
-      - "*/build/classes"
-      - "*/*/build/classes"
-      - "*/*/*/build/classes"
-      - ".gradle/wrapper"
-      - ".gradle/cache"
+      - "build"
+      - "**/build"
+      - ".gradle"
 
 test:
   stage: test
@@ -66,6 +63,10 @@ test:
   tags:
     - iceland
     #- gitlab-org
+    
+  variables:
+    GIT_SUBMODULE_STRATEGY: recursive
+    GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dskip.documentation=true"    
 
   before_script:
     - ./gradlew -v
@@ -75,13 +76,11 @@ test:
 
   cache:
     key: "$CI_COMMIT_REF_NAME"
-    policy: pull-push
+    policy: pull #pull-push
     paths:
-      - "*/build/classes"
-      - "*/*/build/classes"
-      - "*/*/*/build/classes"
-      - ".gradle/wrapper"
-      - ".gradle/cache"
+      - "build"
+      - "**/build"
+      - ".gradle
 
   artifacts:
     reports:
