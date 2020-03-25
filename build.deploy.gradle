@@ -63,8 +63,14 @@ configure(allLeafProjects()){
                 groupId = 'com.wuxinextcode.gor'
             }
         }
+        repositories {
+            maven {
+                name "gitlab-maven"
+                url "https://gitlab.com/api/v4/projects/17033400/packages/maven"
+            }
+        }
     }
-
+/*
     apply plugin: "com.jfrog.artifactory"
 
     artifactory {
@@ -88,4 +94,5 @@ configure(allLeafProjects()){
             }
         }
     }
+    */
 }
