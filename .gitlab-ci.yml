@@ -117,7 +117,7 @@ license_management:
 
 dependency_scanning:
   stage: checks
-    tags:
+  tags:
     - iceland
   #before_script:
   #  - sh .gitlab/scripts/write_gradle_props.sh
