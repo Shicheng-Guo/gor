@@ -80,7 +80,7 @@ test:
     paths:
       - "build"
       - "**/build"
-      - ".gradle
+      - ".gradle"
 
   artifacts:
     reports:
