@@ -168,7 +168,9 @@ publish:
   stage: publish
   tags:
     - iceland
-  script: ./gradlew publish -x test -x slowTest -x integrationTest  
+  script: ./gradlew publish -x test -x slowTest -x integrationTest
+  #only:
+  #  - master
   cache:
     key: "$CI_COMMIT_REF_NAME"
     policy: pull
