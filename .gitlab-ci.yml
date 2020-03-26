@@ -68,8 +68,8 @@ unittest:
     - iceland
  #- gitlab-org
   variables:
-    GIT_SUBMODULE_STRATEGY: recursive 
-  script: ./gradlew test                            
+    GIT_SUBMODULE_STRATEGY: recursive
+  script: ./gradlew test
 
   cache:
     key: "$CI_COMMIT_REF_NAME"
@@ -89,9 +89,9 @@ slowtest:
   stage: test
   #extends: .on-branches
   tags:
-    - iceland  
+    - iceland
   variables:
-    GIT_SUBMODULE_STRATEGY: recursive    
+    GIT_SUBMODULE_STRATEGY: recursive
   script: ./gradlew slowTest
 
   cache:
@@ -107,12 +107,12 @@ slowtest:
       junit:
         - "*/*/*/*/TEST-*.xml"
         - "*/*/*/*/*/TEST-*.xml"
-        
+
 integrationtest:
   stage: test
   #extends: .on-branches
   tags:
-    - iceland    
+    - iceland
   variables:
     GIT_SUBMODULE_STRATEGY: recursive
   script: ./gradlew integrationTest
@@ -130,8 +130,8 @@ integrationtest:
       junit:
         - "*/*/*/*/TEST-*.xml"
         - "*/*/*/*/*/TEST-*.xml"
-        
-        
+
+
 # This codequality block is needed to work around https://gitlab.com/gitlab-org/gitlab/issues/12274
 code_quality:
   stage: test
@@ -140,11 +140,12 @@ code_quality:
 
   variables:
     GIT_SUBMODULE_STRATEGY: none
+    CODECLIMATE_DEBUG: 1
 
   artifacts:
     reports:
       codequality: gl-code-quality-report.json
-    
+
     paths: [gl-code-quality-report.json]
     expire_in: 1 week
 
@@ -153,7 +154,7 @@ license_management:
   #tags:
   #  - iceland
   variables:
-    # There is no need to run tests or generate sphinx documentation for license management 
+    # There is no need to run tests or generate sphinx documentation for license management
     # analysis, however, the license management plugin calls the build task so we have to manually
     # disable tests and documentation generation.
     GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dskip.tests=true -Dskip.documentation=true"
@@ -176,7 +177,7 @@ dependency_scanning:
   #  - sh .gitlab/scripts/write_gradle_props.sh
   artifacts:
     paths: [gl-dependency-scanning-report.json]
-    
+
 publish:
   stage: publish
   #tags:
