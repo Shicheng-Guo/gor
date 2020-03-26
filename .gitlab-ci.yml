@@ -16,8 +16,8 @@ variables:
   #RELEASE_ENV_REPO: wuxi-nextcode/kube-env/customer-kube-env
   GIT_SUBMODULE_STRATEGY: none
   GRADLE_USER_HOME: "$CI_PROJECT_DIR/.gradle"
-  #GRADLE_OPTS: "-Dorg.gradle.daemon=false"
-  GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dskip.documentation=true"    
+  GRADLE_OPTS: "-Dorg.gradle.daemon=false"
+  #GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dskip.documentation=true"
   #AUTO_DEVOPS_BUILD_IMAGE_EXTRA_ARGS: "--build-arg ORG_GRADLE_PROJECT_artifactory_password --build-arg ORG_GRADLE_PROJECT_artifactory_user"
   AUTO_DEVOPS_BUILD_IMAGE_EXTRA_ARGS: --build-arg ORG_GRADLE_PROJECT_artifactory_password=$ORG_GRADLE_PROJECT_artifactory_password --build-arg ORG_GRADLE_PROJECT_artifactory_user=$ORG_GRADLE_PROJECT_artifactory_user
   DOCKER_BUILDKIT: 1
