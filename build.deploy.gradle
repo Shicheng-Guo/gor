@@ -79,7 +79,7 @@ configure(allLeafProjects()){
             }
         }
     }
-/*
+
     apply plugin: "com.jfrog.artifactory"
 
     artifactory {
