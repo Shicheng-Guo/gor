@@ -4,12 +4,11 @@ include:
   - template: Jobs/Code-Quality.gitlab-ci.yml
   - template: Security/License-Management.gitlab-ci.yml
   - template: Security/Dependency-Scanning.gitlab-ci.yml
-#  - template: Jobs/Test.gitlab-ci.yml  # https://gitlab.com/gitlab-org/gitlab-ce/blob/master/lib/gitlab/ci/templates/Jobs/Test.gitlab-ci.yml
-#  - template: Security/SAST.gitlab-ci.yml  # https://gitlab.com/gitlab-org/gitlab-ce/blob/master/lib/gitlab/ci/templates/Security/SAST.gitlab-ci.yml
+  - template: Security/SAST.gitlab-ci.yml  # https://gitlab.com/gitlab-org/gitlab-ce/blob/master/lib/gitlab/ci/templates/Security/SAST.gitlab-ci.yml
 
 
 variables:
-  BUILDER_IMAGE: nextcode/builderimg-java:latest
+  JAVA_BUILDER_IMAGE: nextcode/builderimg-java:latest
   #RELEASABLE_BRANCH: master
   #AUTO_DEPLOY_BRANCH: master
   #AUTO_DEPLOY_ENV_REPO: wuxi-nextcode/kube-env/dev/platform-dev-kube-env
@@ -42,15 +41,14 @@ stages:
 
 build:
   stage: build
-  image: "$BUILDER_IMAGE"
   #extends: .on-branches
+  image: "$JAVA_BUILDER_IMAGE"
   tags:
     - iceland
  #- gitlab-org
   before_script:
     - ./gradlew -v
   script: ./gradlew --build-cache assemble
-
   cache:
     key: "$CI_COMMIT_REF_NAME"
     policy: pull-push
@@ -61,7 +59,7 @@ build:
 
 unittest:
   stage: test
-  image: nextcode/builderimg-java:jdk8
+  image: "$JAVA_BUILDER_IMAGE"
   #extends: .on-branches
   tags:
     - iceland
@@ -69,7 +67,6 @@ unittest:
   variables:
     GIT_SUBMODULE_STRATEGY: recursive
   script: ./gradlew test
-
   cache:
     key: "$CI_COMMIT_REF_NAME"
     policy: pull #pull-push
@@ -77,23 +74,22 @@ unittest:
       - "build"
       - "**/build"
       - ".gradle"
-
   artifacts:
     reports:
       junit:
         - "*/*/*/*/TEST-*.xml"
         - "*/*/*/*/*/TEST-*.xml"
 
+
 slowtest:
   stage: test
-  image: nextcode/builderimg-java:jdk8
+  image: "$JAVA_BUILDER_IMAGE"
   #extends: .on-branches
   tags:
     - iceland
   variables:
     GIT_SUBMODULE_STRATEGY: recursive
   script: ./gradlew slowTest
-
   cache:
     key: "$CI_COMMIT_REF_NAME"
     policy: pull #pull-push
@@ -101,23 +97,22 @@ slowtest:
       - "build"
       - "**/build"
       - ".gradle"
-
   artifacts:
     reports:
       junit:
         - "*/*/*/*/TEST-*.xml"
         - "*/*/*/*/*/TEST-*.xml"
 
+
 integrationtest:
   stage: test
-  image: nextcode/builderimg-java:jdk8
+  image: "$JAVA_BUILDER_IMAGE"
   #extends: .on-branches
   tags:
     - iceland
   variables:
     GIT_SUBMODULE_STRATEGY: recursive
   script: ./gradlew integrationTest
-
   cache:
     key: "$CI_COMMIT_REF_NAME"
     policy: pull #pull-push
@@ -125,7 +120,6 @@ integrationtest:
       - "build"
       - "**/build"
       - ".gradle"
-
   artifacts:
     reports:
       junit:
@@ -138,30 +132,44 @@ code_quality:
   stage: test
   #tags:
   #- iceland
-
+  #only:
+  #  - master
   variables:
     GIT_SUBMODULE_STRATEGY: none
     CODECLIMATE_DEBUG: 1
-
   artifacts:
     reports:
       codequality: gl-code-quality-report.json
-
     paths: [gl-code-quality-report.json]
     expire_in: 1 week
+
+
+sast:
+  image: registry.gitlab.com/gitlab-org/gl-sast:latest
+  script:
+    - export SAST_VERSION=$(echo "$CI_SERVER_VERSION" | sed 's/^\([0-9]*\)\.\([0-9]*\).*/\1-\2-stable/')
+    - docker run
+      --env SAST_CONFIDENCE_LEVEL="${SAST_CONFIDENCE_LEVEL:-3}"
+      --env SAST_DISABLE_REMOTE_CHECKS="${SAST_DISABLE_REMOTE_CHECKS:-false}"
+      --volume "$PWD:/code"
+      --volume /var/run/docker.sock:/var/run/docker.sock
+      "registry.gitlab.com/gitlab-org/security-products/sast:$SAST_VERSION" /app/bin/run /code
+  artifacts:
+    paths: [gl-sast-report.json]
+
 
 license_management:
   stage: test
   #tags:
   #  - iceland
+  only:
+    - master
   variables:
     # There is no need to run tests or generate sphinx documentation for license management
     # analysis, however, the license management plugin calls the build task so we have to manually
     # disable tests and documentation generation.
     GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dskip.tests=true -Dskip.documentation=true"
     GIT_SUBMODULE_STRATEGY: none
-  only:
-    - master
   cache:
     key: "$CI_COMMIT_REF_NAME"
     policy: pull
@@ -169,6 +177,7 @@ license_management:
       - "build"
       - "**/build"
       - ".gradle"
+
 
 dependency_scanning:
   stage: test
@@ -179,9 +188,10 @@ dependency_scanning:
   artifacts:
     paths: [gl-dependency-scanning-report.json]
 
+
 publish:
   stage: publish
-  image: nextcode/builderimg-java:jdk8
+  image: "$JAVA_BUILDER_IMAGE"
   #tags:
   #  - iceland
   script: ./gradlew publish -x test -x slowTest -x integrationTest
