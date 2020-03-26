@@ -4,6 +4,11 @@ include:
   - template: Jobs/Code-Quality.gitlab-ci.yml
   - template: Security/License-Management.gitlab-ci.yml
   - template: Security/Dependency-Scanning.gitlab-ci.yml
+#  - template: Jobs/Test.gitlab-ci.yml  # https://gitlab.com/gitlab-org/gitlab-ce/blob/master/lib/gitlab/ci/templates/Jobs/Test.gitlab-ci.yml
+#  - template: Security/SAST.gitlab-ci.yml  # https://gitlab.com/gitlab-org/gitlab-ce/blob/master/lib/gitlab/ci/templates/Security/SAST.gitlab-ci.yml
+
+
+
 
 image: nextcode/builderimg-java:jdk8
 
@@ -64,7 +69,7 @@ unittest:
  #- gitlab-org
   variables:
     GIT_SUBMODULE_STRATEGY: recursive 
-  script: ./gradlew test
+  script: ./gradlew test                            
 
   cache:
     key: "$CI_COMMIT_REF_NAME"
@@ -130,8 +135,8 @@ integrationtest:
 # This codequality block is needed to work around https://gitlab.com/gitlab-org/gitlab/issues/12274
 code_quality:
   stage: test
-  tags:
-  - iceland
+  #tags:
+  #- iceland
 
   variables:
     GIT_SUBMODULE_STRATEGY: none
@@ -145,15 +150,23 @@ code_quality:
 
 license_management:
   stage: test
-  tags:
-    - iceland
-
+  #tags:
+  #  - iceland
   variables:
     # There is no need to run tests or generate sphinx documentation for license management 
     # analysis, however, the license management plugin calls the build task so we have to manually
     # disable tests and documentation generation.
     GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dskip.tests=true -Dskip.documentation=true"
     GIT_SUBMODULE_STRATEGY: none
+  only:
+    - master
+  cache:
+    key: "$CI_COMMIT_REF_NAME"
+    policy: pull
+    paths:
+      - "build"
+      - "**/build"
+      - ".gradle
 
 dependency_scanning:
   stage: test
