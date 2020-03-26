@@ -8,11 +8,8 @@ include:
 #  - template: Security/SAST.gitlab-ci.yml  # https://gitlab.com/gitlab-org/gitlab-ce/blob/master/lib/gitlab/ci/templates/Security/SAST.gitlab-ci.yml
 
 
-
-
-image: nextcode/builderimg-java:jdk8
-
 variables:
+  BUILDER_IMAGE: nextcode/builderimg-java:latest
   #RELEASABLE_BRANCH: master
   #AUTO_DEPLOY_BRANCH: master
   #AUTO_DEPLOY_ENV_REPO: wuxi-nextcode/kube-env/dev/platform-dev-kube-env
@@ -24,8 +21,8 @@ variables:
   GRADLE_OPTS: "-Dorg.gradle.daemon=false"
   #GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dskip.documentation=true"
   #AUTO_DEVOPS_BUILD_IMAGE_EXTRA_ARGS: "--build-arg ORG_GRADLE_PROJECT_artifactory_password --build-arg ORG_GRADLE_PROJECT_artifactory_user"
-  AUTO_DEVOPS_BUILD_IMAGE_EXTRA_ARGS: --build-arg ORG_GRADLE_PROJECT_artifactory_password=$ORG_GRADLE_PROJECT_artifactory_password --build-arg ORG_GRADLE_PROJECT_artifactory_user=$ORG_GRADLE_PROJECT_artifactory_user
-  DOCKER_BUILDKIT: 1
+  #AUTO_DEVOPS_BUILD_IMAGE_EXTRA_ARGS: --build-arg ORG_GRADLE_PROJECT_artifactory_password=$ORG_GRADLE_PROJECT_artifactory_password --build-arg ORG_GRADLE_PROJECT_artifactory_user=$ORG_GRADLE_PROJECT_artifactory_user
+  #DOCKER_BUILDKIT: 1
 
 
 before_script:
@@ -45,6 +42,7 @@ stages:
 
 build:
   stage: build
+  image: "$BUILDER_IMAGE"
   #extends: .on-branches
   tags:
     - iceland
@@ -63,6 +61,7 @@ build:
 
 unittest:
   stage: test
+  image: nextcode/builderimg-java:jdk8
   #extends: .on-branches
   tags:
     - iceland
@@ -87,6 +86,7 @@ unittest:
 
 slowtest:
   stage: test
+  image: nextcode/builderimg-java:jdk8
   #extends: .on-branches
   tags:
     - iceland
@@ -110,6 +110,7 @@ slowtest:
 
 integrationtest:
   stage: test
+  image: nextcode/builderimg-java:jdk8
   #extends: .on-branches
   tags:
     - iceland
@@ -180,6 +181,7 @@ dependency_scanning:
 
 publish:
   stage: publish
+  image: nextcode/builderimg-java:jdk8
   #tags:
   #  - iceland
   script: ./gradlew publish -x test -x slowTest -x integrationTest
