@@ -166,12 +166,12 @@ license_management:
     paths:
       - "build"
       - "**/build"
-      - ".gradle
+      - ".gradle"
 
 dependency_scanning:
   stage: test
-  tags:
-    - iceland
+  #tags:
+  #  - iceland
   #before_script:
   #  - sh .gitlab/scripts/write_gradle_props.sh
   artifacts:
@@ -179,8 +179,8 @@ dependency_scanning:
     
 publish:
   stage: publish
-  tags:
-    - iceland
+  #tags:
+  #  - iceland
   script: ./gradlew publish -x test -x slowTest -x integrationTest
   #only:
   #  - master
