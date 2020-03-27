@@ -1,10 +1,3 @@
-include:
-  - project: wuxi-nextcode/sdev/gitlab-ci-scripts
-    file: /auto-ci-workflow.yml
-  - template: Jobs/Code-Quality.gitlab-ci.yml
-  - template: Security/License-Management.gitlab-ci.yml
-  - template: Security/Dependency-Scanning.gitlab-ci.yml
-  - template: Security/SAST.gitlab-ci.yml  # https://gitlab.com/gitlab-org/gitlab-ce/blob/master/lib/gitlab/ci/templates/Security/SAST.gitlab-ci.yml
 
 
 variables:
@@ -17,15 +10,11 @@ variables:
   #RELEASE_ENV_REPO: wuxi-nextcode/kube-env/customer-kube-env
   GIT_SUBMODULE_STRATEGY: none
   GRADLE_USER_HOME: "$CI_PROJECT_DIR/.gradle"
-  GRADLE_OPTS: "-Dorg.gradle.daemon=false"
+  GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dorg.gradle.caching=true"
   #GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dskip.documentation=true"
   #AUTO_DEVOPS_BUILD_IMAGE_EXTRA_ARGS: "--build-arg ORG_GRADLE_PROJECT_artifactory_password --build-arg ORG_GRADLE_PROJECT_artifactory_user"
   #AUTO_DEVOPS_BUILD_IMAGE_EXTRA_ARGS: --build-arg ORG_GRADLE_PROJECT_artifactory_password=$ORG_GRADLE_PROJECT_artifactory_password --build-arg ORG_GRADLE_PROJECT_artifactory_user=$ORG_GRADLE_PROJECT_artifactory_user
   #DOCKER_BUILDKIT: 1
-
-
-before_script:
-  - export GRADLE_USER_HOME=`pwd`/.gradle
 
 
 stages:
@@ -37,16 +26,14 @@ stages:
   - deploy
 
 
+before_script:
+  - export GRADLE_USER_HOME=`pwd`/.gradle
+
+
 build:
   stage: build
-  #extends: .on-branches
   image: "$JAVA_BUILDER_IMAGE"
-  #tags:
-  #  - iceland
-  #- gitlab-org
-  #before_script:
-  #  - ./gradlew -v
-  script: ./gradlew --build-cache assemble
+  script: ./gradlew assemble
   cache:
     key: "$CI_COMMIT_REF_NAME"
     policy: pull-push
@@ -56,90 +43,47 @@ build:
       - ".gradle"
 
 
-.test:
-  stage: test
+.build_cache:
   extends: build
-  variables:
-    GIT_SUBMODULE_STRATEGY: recursive
   cache:
     key: "$CI_COMMIT_REF_NAME"
-    policy: pull #pull-push
+    policy: pull
     paths:
       - "build"
       - "**/build"
       - ".gradle"
+
+
+.test:
+  extends: .build_cache
+  stage: test
+  variables:
+    GIT_SUBMODULE_STRATEGY: recursive
   artifacts:
     reports:
       junit:
         - "*/*/*/*/TEST-*.xml"
         - "*/*/*/*/*/TEST-*.xml"
 
+
 unittest:
-  #stage: test
   extends: .test
-  #image: "$JAVA_BUILDER_IMAGE"
-  #
-  #tags:
-  #  - iceland
- #- gitlab-org
-
   script: ./gradlew test
-
 
 
 slowtest:
   extends: .test
-  #stage: test
-  #image: "$JAVA_BUILDER_IMAGE"
-  #extends: .on-branches
-  #tags:
-  #  - iceland
-  #variables:
-  #  GIT_SUBMODULE_STRATEGY: recursive
   script: ./gradlew slowTest
-#  cache:
-#    key: "$CI_COMMIT_REF_NAME"
-#    policy: pull #pull-push
-#    paths:
-#      - "build"
-#      - "**/build"
-#      - ".gradle"
-#  artifacts:
-#    reports:
-#      junit:
-#        - "*/*/*/*/TEST-*.xml"
-#        - "*/*/*/*/*/TEST-*.xml"
 
 
 integrationtest:
   extends: .test
-  #stage: test
-  #image: "$JAVA_BUILDER_IMAGE"
-  #extends: .on-branches
-#  tags:
-#    - iceland
-#  variables:
-#    GIT_SUBMODULE_STRATEGY: recursive
   script: ./gradlew integrationTest
-#  cache:
-#    key: "$CI_COMMIT_REF_NAME"
-#    policy: pull #pull-push
-#    paths:
-#      - "build"
-#      - "**/build"
-#      - ".gradle"
-#  artifacts:
-#    reports:
-#      junit:
-#        - "*/*/*/*/TEST-*.xml"
-#        - "*/*/*/*/*/TEST-*.xml"
 
 
 # This codequality block is needed to work around https://gitlab.com/gitlab-org/gitlab/issues/12274
 code_quality:
   stage: test
-  #tags:
-  #- iceland
   #only:
   #  - master
   variables:
@@ -150,6 +94,43 @@ code_quality:
     paths: [gl-code-quality-report.json]
     expire_in: 1 week
 
+
+license_management:
+  extends: .build_cache
+  stage: test
+  only:
+    - master
+  variables:
+    # There is no need to run tests or generate sphinx documentation for license management
+    # analysis, however, the license management plugin calls the build task so we have to manually
+    # disable tests and documentation generation.
+    GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dskip.tests=true -Dskip.documentation=true"
+    GIT_SUBMODULE_STRATEGY: none
+
+
+dependency_scanning:
+  stage: test
+  # only:
+  #  - master
+  artifacts:
+    paths: [gl-dependency-scanning-report.json]
+
+
+publish:
+  extends: .build_cache
+  stage: publish
+  #only:
+  #  - master
+  script: ./gradlew publish -x test -x slowTest -x integrationTest
+
+
+include:
+  - project: wuxi-nextcode/sdev/gitlab-ci-scripts
+    file: /auto-ci-workflow.yml
+  - template: Jobs/Code-Quality.gitlab-ci.yml
+  - template: Security/License-Management.gitlab-ci.yml
+  - template: Security/Dependency-Scanning.gitlab-ci.yml
+  - template: Security/SAST.gitlab-ci.yml  # https://gitlab.com/gitlab-org/gitlab-ce/blob/master/lib/gitlab/ci/templates/Security/SAST.gitlab-ci.yml
 
 #sast:
 #  stage: test
@@ -172,50 +153,3 @@ code_quality:
 #      - "build"
 #      - "**/build"
 #      - ".gradle"
-
-license_management:
-  stage: test
-  #tags:
-  #  - iceland
-  only:
-    - master
-  variables:
-    # There is no need to run tests or generate sphinx documentation for license management
-    # analysis, however, the license management plugin calls the build task so we have to manually
-    # disable tests and documentation generation.
-    GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dskip.tests=true -Dskip.documentation=true"
-    GIT_SUBMODULE_STRATEGY: none
-  cache:
-    key: "$CI_COMMIT_REF_NAME"
-    policy: pull
-    paths:
-      - "build"
-      - "**/build"
-      - ".gradle"
-
-
-dependency_scanning:
-  stage: test
-  #tags:
-  #  - iceland
-  #before_script:
-  #  - sh .gitlab/scripts/write_gradle_props.sh
-  artifacts:
-    paths: [gl-dependency-scanning-report.json]
-
-
-publish:
-  stage: publish
-  image: "$JAVA_BUILDER_IMAGE"
-  tags:
-    - iceland
-  script: ./gradlew publish -x test -x slowTest -x integrationTest
-  #only:
-  #  - master
-  cache:
-    key: "$CI_COMMIT_REF_NAME"
-    policy: pull
-    paths:
-      - "build"
-      - "**/build"
-      - ".gradle"
