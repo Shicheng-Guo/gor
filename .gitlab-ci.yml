@@ -26,6 +26,10 @@ build:
   stage: build
   image: "$JAVA_BUILDER_IMAGE"
   script: ./gradlew assemble
+  tags:
+    - iceland
+  only:
+    - branches
   cache:
     key: "$CI_COMMIT_REF_NAME"
     policy: pull-push
