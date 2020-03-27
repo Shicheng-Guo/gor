@@ -48,7 +48,7 @@ buildscript {
     }
 }
 
-version = new File("${rootDir}/version").text.trim()
+version = new File("${rootDir}/VERSION").text.trim()
 
 apply from: "${rootDir}/gradle/util.gradle"
 
