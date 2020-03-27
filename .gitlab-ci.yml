@@ -1,6 +1,6 @@
 include:
-  #- project: wuxi-nextcode/sdev/gitlab-ci-scripts
-  #  file: /auto-ci-workflow.yml
+  - project: wuxi-nextcode/sdev/gitlab-ci-scripts
+    file: /auto-ci-workflow.yml
   - template: Jobs/Code-Quality.gitlab-ci.yml
   - template: Security/License-Management.gitlab-ci.yml
   - template: Security/Dependency-Scanning.gitlab-ci.yml
@@ -29,25 +29,23 @@ before_script:
 
 
 stages:
-  #- pre_build
   - build
   - test
-  - checks
   - publish
-  #- promote
-  #- release
-  #- deploy
+  - promote
+  - release
+  - deploy
 
 
 build:
   stage: build
   #extends: .on-branches
   image: "$JAVA_BUILDER_IMAGE"
-  tags:
-    - iceland
- #- gitlab-org
-  before_script:
-    - ./gradlew -v
+  #tags:
+  #  - iceland
+  #- gitlab-org
+  #before_script:
+  #  - ./gradlew -v
   script: ./gradlew --build-cache assemble
   cache:
     key: "$CI_COMMIT_REF_NAME"
@@ -57,16 +55,12 @@ build:
       - "**/build"
       - ".gradle"
 
-unittest:
+
+.test:
   stage: test
-  image: "$JAVA_BUILDER_IMAGE"
-  #extends: .on-branches
-  tags:
-    - iceland
- #- gitlab-org
+  extends: build
   variables:
     GIT_SUBMODULE_STRATEGY: recursive
-  script: ./gradlew test
   cache:
     key: "$CI_COMMIT_REF_NAME"
     policy: pull #pull-push
@@ -79,52 +73,66 @@ unittest:
       junit:
         - "*/*/*/*/TEST-*.xml"
         - "*/*/*/*/*/TEST-*.xml"
+
+unittest:
+  #stage: test
+  extends: .test
+  #image: "$JAVA_BUILDER_IMAGE"
+  #
+  #tags:
+  #  - iceland
+ #- gitlab-org
+
+  script: ./gradlew test
+
 
 
 slowtest:
-  stage: test
-  image: "$JAVA_BUILDER_IMAGE"
+  extends: .test
+  #stage: test
+  #image: "$JAVA_BUILDER_IMAGE"
   #extends: .on-branches
-  tags:
-    - iceland
-  variables:
-    GIT_SUBMODULE_STRATEGY: recursive
+  #tags:
+  #  - iceland
+  #variables:
+  #  GIT_SUBMODULE_STRATEGY: recursive
   script: ./gradlew slowTest
-  cache:
-    key: "$CI_COMMIT_REF_NAME"
-    policy: pull #pull-push
-    paths:
-      - "build"
-      - "**/build"
-      - ".gradle"
-  artifacts:
-    reports:
-      junit:
-        - "*/*/*/*/TEST-*.xml"
-        - "*/*/*/*/*/TEST-*.xml"
+#  cache:
+#    key: "$CI_COMMIT_REF_NAME"
+#    policy: pull #pull-push
+#    paths:
+#      - "build"
+#      - "**/build"
+#      - ".gradle"
+#  artifacts:
+#    reports:
+#      junit:
+#        - "*/*/*/*/TEST-*.xml"
+#        - "*/*/*/*/*/TEST-*.xml"
 
 
 integrationtest:
-  stage: test
-  image: "$JAVA_BUILDER_IMAGE"
+  extends: .test
+  #stage: test
+  #image: "$JAVA_BUILDER_IMAGE"
   #extends: .on-branches
-  tags:
-    - iceland
-  variables:
-    GIT_SUBMODULE_STRATEGY: recursive
+#  tags:
+#    - iceland
+#  variables:
+#    GIT_SUBMODULE_STRATEGY: recursive
   script: ./gradlew integrationTest
-  cache:
-    key: "$CI_COMMIT_REF_NAME"
-    policy: pull #pull-push
-    paths:
-      - "build"
-      - "**/build"
-      - ".gradle"
-  artifacts:
-    reports:
-      junit:
-        - "*/*/*/*/TEST-*.xml"
-        - "*/*/*/*/*/TEST-*.xml"
+#  cache:
+#    key: "$CI_COMMIT_REF_NAME"
+#    policy: pull #pull-push
+#    paths:
+#      - "build"
+#      - "**/build"
+#      - ".gradle"
+#  artifacts:
+#    reports:
+#      junit:
+#        - "*/*/*/*/TEST-*.xml"
+#        - "*/*/*/*/*/TEST-*.xml"
 
 
 # This codequality block is needed to work around https://gitlab.com/gitlab-org/gitlab/issues/12274
@@ -136,7 +144,6 @@ code_quality:
   #  - master
   variables:
     GIT_SUBMODULE_STRATEGY: none
-    CODECLIMATE_DEBUG: 1
   artifacts:
     reports:
       codequality: gl-code-quality-report.json
@@ -144,21 +151,27 @@ code_quality:
     expire_in: 1 week
 
 
-sast:
-  stage: test
-
-#  image: registry.gitlab.com/gitlab-org/gl-sast:latest
-#  script:
-#    - export SAST_VERSION=$(echo "$CI_SERVER_VERSION" | sed 's/^\([0-9]*\)\.\([0-9]*\).*/\1-\2-stable/')
-#    - docker run
-#      --env SAST_CONFIDENCE_LEVEL="${SAST_CONFIDENCE_LEVEL:-3}"
-#      --env SAST_DISABLE_REMOTE_CHECKS="${SAST_DISABLE_REMOTE_CHECKS:-false}"
-#      --volume "$PWD:/code"
-#      --volume /var/run/docker.sock:/var/run/docker.sock
-#      "registry.gitlab.com/gitlab-org/security-products/sast:$SAST_VERSION" /app/bin/run /code
-#  artifacts:
-#    paths: [gl-sast-report.json]
-
+#sast:
+#  stage: test
+#
+##  image: registry.gitlab.com/gitlab-org/gl-sast:latest
+##  script:
+##    - export SAST_VERSION=$(echo "$CI_SERVER_VERSION" | sed 's/^\([0-9]*\)\.\([0-9]*\).*/\1-\2-stable/')
+##    - docker run
+##      --env SAST_CONFIDENCE_LEVEL="${SAST_CONFIDENCE_LEVEL:-3}"
+##      --env SAST_DISABLE_REMOTE_CHECKS="${SAST_DISABLE_REMOTE_CHECKS:-false}"
+##      --volume "$PWD:/code"
+##      --volume /var/run/docker.sock:/var/run/docker.sock
+##      "registry.gitlab.com/gitlab-org/security-products/sast:$SAST_VERSION" /app/bin/run /code
+##  artifacts:
+##    paths: [gl-sast-report.json]
+#  cache:
+#    key: "$CI_COMMIT_REF_NAME"
+#    policy: pull #pull-push
+#    paths:
+#      - "build"
+#      - "**/build"
+#      - ".gradle"
 
 license_management:
   stage: test
@@ -194,8 +207,8 @@ dependency_scanning:
 publish:
   stage: publish
   image: "$JAVA_BUILDER_IMAGE"
-  #tags:
-  #  - iceland
+  tags:
+    - iceland
   script: ./gradlew publish -x test -x slowTest -x integrationTest
   #only:
   #  - master
