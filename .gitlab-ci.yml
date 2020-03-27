@@ -1,20 +1,12 @@
-
+#
+# Gitlab build file for GOR.
+#
 
 variables:
   JAVA_BUILDER_IMAGE: nextcode/builderimg-java:latest
-  #RELEASABLE_BRANCH: master
-  #AUTO_DEPLOY_BRANCH: master
-  #AUTO_DEPLOY_ENV_REPO: wuxi-nextcode/kube-env/dev/platform-dev-kube-env
-  #DOWNSTREAM_KUBE_SUBCHART: sequence-miner
-  #DOCKER_HUB_REPO: nextcode/smclient
-  #RELEASE_ENV_REPO: wuxi-nextcode/kube-env/customer-kube-env
   GIT_SUBMODULE_STRATEGY: none
   GRADLE_USER_HOME: "$CI_PROJECT_DIR/.gradle"
   GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dorg.gradle.caching=true"
-  #GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dskip.documentation=true"
-  #AUTO_DEVOPS_BUILD_IMAGE_EXTRA_ARGS: "--build-arg ORG_GRADLE_PROJECT_artifactory_password --build-arg ORG_GRADLE_PROJECT_artifactory_user"
-  #AUTO_DEVOPS_BUILD_IMAGE_EXTRA_ARGS: --build-arg ORG_GRADLE_PROJECT_artifactory_password=$ORG_GRADLE_PROJECT_artifactory_password --build-arg ORG_GRADLE_PROJECT_artifactory_user=$ORG_GRADLE_PROJECT_artifactory_user
-  #DOCKER_BUILDKIT: 1
 
 
 stages:
@@ -81,13 +73,16 @@ integrationtest:
   script: ./gradlew integrationTest
 
 
+reporttest:
+  extends: .test
+  script: ./gradlew test slowTest jacocoTestReport check
+
+
 # This codequality block is needed to work around https://gitlab.com/gitlab-org/gitlab/issues/12274
 code_quality:
   stage: test
   #only:
   #  - master
-  variables:
-    GIT_SUBMODULE_STRATEGY: none
   artifacts:
     reports:
       codequality: gl-code-quality-report.json
@@ -105,7 +100,6 @@ license_management:
     # analysis, however, the license management plugin calls the build task so we have to manually
     # disable tests and documentation generation.
     GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dskip.tests=true -Dskip.documentation=true"
-    GIT_SUBMODULE_STRATEGY: none
 
 
 dependency_scanning:
@@ -125,12 +119,10 @@ publish:
 
 
 include:
-  - project: wuxi-nextcode/sdev/gitlab-ci-scripts
-    file: /auto-ci-workflow.yml
   - template: Jobs/Code-Quality.gitlab-ci.yml
   - template: Security/License-Management.gitlab-ci.yml
   - template: Security/Dependency-Scanning.gitlab-ci.yml
-  - template: Security/SAST.gitlab-ci.yml  # https://gitlab.com/gitlab-org/gitlab-ce/blob/master/lib/gitlab/ci/templates/Security/SAST.gitlab-ci.yml
+#  - template: Security/SAST.gitlab-ci.yml  # https://gitlab.com/gitlab-org/gitlab-ce/blob/master/lib/gitlab/ci/templates/Security/SAST.gitlab-ci.yml
 
 #sast:
 #  stage: test
