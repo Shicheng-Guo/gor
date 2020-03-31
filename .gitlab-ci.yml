@@ -13,9 +13,6 @@ stages:
   - build
   - test
   - publish
-  - promote
-  - release
-  - deploy
 
 
 before_script:
@@ -64,17 +61,17 @@ build:
 
 unittest:
   extends: .test
-  script: ./gradlew test
+  script: ./gradlew --continue test
 
 
 slowtest:
   extends: .test
-  script: ./gradlew slowTest
+  script: ./gradlew --continue slowTest
 
 
 integrationtest:
   extends: .test
-  script: ./gradlew integrationTest
+  script: ./gradlew --continue integrationTest
 
 
 reporttest:
@@ -117,8 +114,8 @@ dependency_scanning:
 publish:
   extends: .build_cache
   stage: publish
-  #only:
-  #  - master
+  only:
+    - master
   script: ./gradlew publish -x test -x slowTest -x integrationTest
 
 
@@ -126,26 +123,3 @@ include:
   - template: Jobs/Code-Quality.gitlab-ci.yml
   - template: Security/License-Management.gitlab-ci.yml
   - template: Security/Dependency-Scanning.gitlab-ci.yml
-#  - template: Security/SAST.gitlab-ci.yml  # https://gitlab.com/gitlab-org/gitlab-ce/blob/master/lib/gitlab/ci/templates/Security/SAST.gitlab-ci.yml
-
-#sast:
-#  stage: test
-#
-##  image: registry.gitlab.com/gitlab-org/gl-sast:latest
-##  script:
-##    - export SAST_VERSION=$(echo "$CI_SERVER_VERSION" | sed 's/^\([0-9]*\)\.\([0-9]*\).*/\1-\2-stable/')
-##    - docker run
-##      --env SAST_CONFIDENCE_LEVEL="${SAST_CONFIDENCE_LEVEL:-3}"
-##      --env SAST_DISABLE_REMOTE_CHECKS="${SAST_DISABLE_REMOTE_CHECKS:-false}"
-##      --volume "$PWD:/code"
-##      --volume /var/run/docker.sock:/var/run/docker.sock
-##      "registry.gitlab.com/gitlab-org/security-products/sast:$SAST_VERSION" /app/bin/run /code
-##  artifacts:
-##    paths: [gl-sast-report.json]
-#  cache:
-#    key: "$CI_COMMIT_REF_NAME"
-#    policy: pull #pull-push
-#    paths:
-#      - "build"
-#      - "**/build"
-#      - ".gradle"
