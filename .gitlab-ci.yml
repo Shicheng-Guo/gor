@@ -74,11 +74,6 @@ integrationtest:
   script: ./gradlew --continue integrationTest
 
 
-reporttest:
-  extends: .test
-  script: ./gradlew test slowTest jacocoTestReport check
-
-
 # This codequality block is needed to work around https://gitlab.com/gitlab-org/gitlab/issues/12274
 code_quality:
   stage: test
