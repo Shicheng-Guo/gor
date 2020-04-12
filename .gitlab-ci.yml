@@ -99,6 +99,8 @@ code_quality:
   extends:
     - .on-releasable-or-release-branch-only
   stage: test
+  tags:
+    - iceland
   artifacts:
     reports:
       codequality: gl-code-quality-report.json
@@ -110,7 +112,7 @@ license_management:
   extends:
     - .build_cache
     - .on-releasable-or-release-branch-only
-  stage: test 
+  stage: test
   variables:
     # There is no need to run tests or generate sphinx documentation for license management
     # analysis, however, the license management plugin calls the build task so we have to manually
@@ -120,8 +122,6 @@ license_management:
 
 dependency_scanning:
   stage: test
-  # only:
-  #  - master
   tags:
     - iceland
   variables:
