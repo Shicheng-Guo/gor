@@ -1,8 +1,9 @@
 SHORT_NAME = gor
 
-BRANCH = $(git rev-parse --abbrev-ref HEAD)
-COMMIT_HASH = $(git rev-parse --short HEAD)
-CURRENT_VERSION = $(cat VERSION)
+BRANCH = $(shell git rev-parse --abbrev-ref HEAD)
+COMMIT_HASH = $(shell git rev-parse --short HEAD)
+CURRENT_VERSION = $(shell cat VERSION)
+CURRENT_TAG_VERSION = "v${CURRENT_VERSION}"
 
 help:  ## This help.
 	@grep -E '^[a-zA-Z0-9_-]+:.*?#*.*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?#+"}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
@@ -155,10 +156,8 @@ release-from-release:  ## Release from the given release branch.  Assumes BRANCH
 	git checkout release/v${BRANCH_VERSION}
 	git pull
 
-	VERSION=$(cat VERSION)
-	TAG="v${VERSION}"
-	git tag -a ${TAG} -m "Releasing gor-services ${TAG}"
-	git push origin ${TAG}
+	git tag -a ${CURRENT_TAG_VERSION} -m "Releasing gor-services ${CURRENT_TAG_VERSION}"
+	git push origin $(CURRENT_TAG_VERSION)
 
 
 #

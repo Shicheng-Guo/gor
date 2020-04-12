@@ -19,7 +19,7 @@ variables:
   only:
     variables:
       - $CI_COMMIT_REF_NAME == $RELEASABLE_BRANCH
-      - $CI_COMMIT_REF_NAME =~ /^release\/v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(-([1-9]\d*|[\da-z-]*[a-z-][\da-z-]*)(\.([1-9]\d*|[\da-z-]*[a-z-][\da-z-]*))*)?(\+[\da-z-]+(\.[\da-z-]+)*)?$/
+      - $CI_COMMIT_REF_NAME =~ /^release\/v(0|[1-9]\d*)\.(0|[1-9]\d*)$/
 
 .on-releasable-or-semver-tag-only:
   only:
@@ -57,7 +57,7 @@ build:
 
 
 .build_cache:
-  image: "$JAVA_BUILDER_IMAGE"
+  extends: build
   cache:
     key: "$CI_COMMIT_REF_NAME"
     policy: pull
@@ -110,9 +110,7 @@ license_management:
   extends:
     - .build_cache
     - .on-releasable-or-release-branch-only
-  stage: test
-  only:
-    - master
+  stage: test 
   variables:
     # There is no need to run tests or generate sphinx documentation for license management
     # analysis, however, the license management plugin calls the build task so we have to manually
