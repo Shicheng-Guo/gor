@@ -27,6 +27,11 @@ variables:
       - $CI_COMMIT_REF_NAME == $RELEASABLE_BRANCH
       - $CI_COMMIT_TAG =~ /^v?(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(-([1-9]\d*|[\da-z-]*[a-z-][\da-z-]*)(\.([1-9]\d*|[\da-z-]*[a-z-][\da-z-]*))*)?(\+[\da-z-]+(\.[\da-z-]+)*)?$/
 
+.on-semver-tag-only:
+  only:
+    variables:
+      - $CI_COMMIT_TAG =~ /^v?(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(-([1-9]\d*|[\da-z-]*[a-z-][\da-z-]*)(\.([1-9]\d*|[\da-z-]*[a-z-][\da-z-]*))*)?(\+[\da-z-]+(\.[\da-z-]+)*)?$/
+
 
 stages:
   - build
@@ -142,6 +147,14 @@ publish:
     - .on-releasable-or-semver-tag-only
   stage: publish
   script: ./gradlew publish -x test -x slowTest -x integrationTest
+
+
+artifactory_publish:
+  extends:
+    - .build_cache
+    - .on-semver-tag-only
+  stage: publish
+  script: ./gradlew -Partifactory_repo=libs-staging-local artifactoryPublish -x test -x slowTest -x integrationTest
 
 
 gor-services:
