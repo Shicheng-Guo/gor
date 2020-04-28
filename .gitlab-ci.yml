@@ -61,7 +61,7 @@ build:
       - ".gradle"
 
 
-.build_cache:
+.build_with_cache:
   extends: build
   cache:
     key: "$CI_COMMIT_REF_NAME"
@@ -73,7 +73,7 @@ build:
 
 
 .test:
-  extends: .build_cache
+  extends: .build_with_cache
   stage: test
   variables:
     GIT_SUBMODULE_STRATEGY: recursive
@@ -118,7 +118,7 @@ code_quality:
 
 license_management:
   extends:
-    - .build_cache
+    - .build_with_cache
     - .on-releasable-or-release-branch-only
   stage: test
   variables:
@@ -143,7 +143,7 @@ dependency_scanning:
 
 publish:
   extends:
-    - .build_cache
+    - .build_with_cache
     - .on-releasable-or-semver-tag-only
   stage: publish
   script: ./gradlew publish -x test -x slowTest -x integrationTest
@@ -151,7 +151,7 @@ publish:
 
 artifactory_publish:
   extends:
-    - .build_cache
+    - .build_with_cache
     - .on-semver-tag-only
   stage: publish
   script: ./gradlew -Partifactory_repo=libs-staging-local artifactoryPublish -x test -x slowTest -x integrationTest
