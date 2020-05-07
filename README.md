@@ -15,7 +15,10 @@ Before setting up GORpipe you need to have Java set up on your computer:
 
 Test data for GOR is obtained by cloning the GOR test data repository (https://github.com/gorpipe/gor-test-data) as a submodule into the `tests/data` folder:
 
-    git submodule update --init --recursive
+     git clone https://github.com/gorpipe/gor.git
+     cd gor
+     git submodule update --init --recursive
+     make build 
 
 ## Getting started with GORpipe
 
